@@ -1,12 +1,15 @@
-## Interface: 110007
-## Title: ZamestoTV: Fishing Derby
-## Title-ruRU: ZamestoTV: Рыбоборье
+## Interface: 110105
+## Title: Fishing Derby
+## Title-ruRU: Рыбоборье Тайносводья
 ## Notes: Tips for catching fish in Hallowfall Fishing Derby
 ## Notes-ruRU: Подсказки для поимки рыб в Рыбоборье в Тайносводье
 ## Author: ZamestoTV
 ## IconTexture: Interface\AddOns\ZamestoTV_Fish\Icons\goblin
-## Version: 1.7.4
+## Version: 3.0.4
+## SavedVariables: FishingTWWDB
+
+## Category-enUS: Addons ZamestoTV
+## Category-ruRU: Аддоны ZamestoTV
 
 Derby.lua
-timer.lua
 
