@@ -80,7 +80,7 @@ ns.questFish = {
         {name = L['Queen\'s Lurefish'], questId=82934, zones={L['Hallowfall'], L['Azj-Kahet']}, pools={L['Royal Ripple'], L['Any Water']}, notes=L['Throw Regal Dottyback in water for buff, so as not to search for pools'], caught = false}
     },
     [83529] = {
-        {name = L['Bismuth Bitterling'], questId=82920, zones={L['Hallowfall']}, zones={L['Isle of Dorn'], L['The Ringing Deeps']}, pools={L['Glimmerpool']}, notes='', caught = false},
+        {name = L['Bismuth Bitterling'], questId=82920, zones={L['Isle of Dorn'], L['The Ringing Deeps']}, pools={L['Glimmerpool']}, notes='', caught = false},
         {name = L['Whispering Stargazer'], questId=82922, zones={L['Isle of Dorn'], L['The Ringing Deeps'], L['Hallowfall']}, pools={L['Stargazer Swarm']}, notes='', caught = false},
         {name = L['Regal Dottyback'], questId=82929, zones={L['Hallowfall'], L['Azj-Kahet']}, pools={L['Royal Ripple']}, notes='', caught = false}
     },
@@ -271,7 +271,7 @@ local function checkBuffAndDisplayFrame()
         end
     end
 
-    -- Show frame only if both aura is present and an active quest is found
+    -- Show frame only if both aura and active quest are present, hide otherwise
     if auraTable and hasActiveQuest then
         frame:Show()
         updateDisplay()
@@ -284,7 +284,7 @@ end
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("QUEST_LOG_UPDATE")
 frame:RegisterEvent("UNIT_AURA")
-frame:SetScript("OnEvent", function(_, event, unit)
+frame:SetScript("OnEvent", function(self, event, unit)
     if event == "UNIT_AURA" and unit == "player" then
         checkBuffAndDisplayFrame()
     elseif event == "PLAYER_ENTERING_WORLD" or event == "QUEST_LOG_UPDATE" then
