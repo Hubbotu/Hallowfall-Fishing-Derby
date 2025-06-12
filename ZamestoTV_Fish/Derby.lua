@@ -151,7 +151,7 @@ local function updateDisplay()
     wipe(fishFrames)
 
     local offsetY = 0
-    local text = 'Version 3.0.4\n\n'
+    local text = 'Version 3.0.6\n\n'
     local activeQuest = nil
     local questIds = {82778, 83529, 83530, 83531, 83532}
 
