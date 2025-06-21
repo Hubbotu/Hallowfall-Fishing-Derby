@@ -91,7 +91,7 @@ ns.questFish = {
     },
     [83531] = {
         {name = L['Dilly-Dally Dace'], questId=82947, zones={L['Isle of Dorn'], L['The Ringing Deeps'], L['Hallowfall']}, pools={L['Blood in the Water'], L['Calm Surfacing Ripple'], L['Festering Rotpool']}, notes='', caught = false},
-        {name = L['Dornish Pike'], questId=82926, zones={L['Isle of Dorn'], L['The Ringing Deeps'], L['Hallowfall']}, pools={L['Calm Surfacing Ripple']}, notes='', caught = false},
+        {...},
         {name = L['Kaheti Slum Shark'], questId=82930, zones={L['Hallowfall'], L['Azj-Kahet']}, pools={L['Blood in the Water'], L['Swarm of Slum Sharks']}, notes='', caught = false}
     },
     [83532] = {
@@ -127,18 +127,45 @@ local title = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 title:SetPoint("TOP", frame, "TOP", 0, -10)
 title:SetText(L['Hallowfall Fishing Derby'])
 
--- Create Scroll Frame for Content
-local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-scrollFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 15, -40)
-scrollFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -35, 15)
+-- Add Close Button
+local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -5, -5)
+closeButton:SetScript("OnClick", function() frame:Hide() end)
 
--- Create Content Frame
-local content = CreateFrame("Frame", nil, scrollFrame)
-content:SetSize(1, 1) -- Will dynamically resize
-scrollFrame:SetScrollChild(content)
+-- Create Content Frame (without ScrollFrame)
+local content = CreateFrame("Frame", nil, frame)
+content:SetPoint("TOPLEFT", frame, "TOPLEFT", 15, -40)
+content:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -15, 15)
+content:SetSize(360, 260)
 
 -- Table to store fish entry frames for cleanup
 local fishFrames = {}
+
+-- Timer variables
+local DERBY_DASHER_SPELL_ID = 456024
+local timerText
+
+-- Function to format time
+local function FormatTime(seconds)
+    local minutes = math.floor(seconds / 60)
+    seconds = seconds % 60
+    return string.format("%d:%02d", minutes, seconds)
+end
+
+-- Update Timer Function
+local function UpdateTimer()
+    local aura = C_UnitAuras.GetPlayerAuraBySpellID(DERBY_DASHER_SPELL_ID)
+    if aura and aura.expirationTime then
+        local timeLeft = aura.expirationTime - GetTime()
+        if timeLeft > 0 then
+            timerText:SetText("Derby Dasher Timer: " .. FormatTime(math.floor(timeLeft)))
+        else
+            timerText:SetText("Derby Dasher Timer: Expired")
+        end
+    else
+        timerText:SetText("Derby Dasher Timer: Not Active")
+    end
+end
 
 -- Update Display Function
 local function updateDisplay()
@@ -151,27 +178,20 @@ local function updateDisplay()
     wipe(fishFrames)
 
     local offsetY = 0
-    local text = 'Version 3.0.6\n\n'
+    local text = 'Version 3.1.1\n\n'
     local activeQuest = nil
     local questIds = {82778, 83529, 83530, 83531, 83532}
 
     -- Check for active quest
     for _, qid in ipairs(questIds) do
-        if C_QuestLog.IsQuestFlaggedCompleted(qid) or C_QuestLog.IsOnQuest(qid) then
+        if C_QuestLog.IsOnQuest(qid) then
             activeQuest = qid
             break
         end
     end
 
     if not activeQuest then
-        local noQuestText = content:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-        noQuestText:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -offsetY)
-        noQuestText:SetJustifyH("LEFT")
-        noQuestText:SetJustifyV("TOP")
-        noQuestText:SetWidth(340)
-        noQuestText:SetText(text .. 'No active fishing quest found.\n')
-        content:SetHeight(noQuestText:GetStringHeight())
-        table.insert(fishFrames, noQuestText)
+        frame:Hide()
         return
     end
 
@@ -193,9 +213,29 @@ local function updateDisplay()
     headerText:SetJustifyH("LEFT")
     headerText:SetJustifyV("TOP")
     headerText:SetWidth(340)
-    headerText:SetText(text .. 'Active Quest ID: ' .. activeQuest .. '\n\n|cffffff00Fish to Catch:|r\n')
+    headerText:SetText(text .. 'Active Quest ID: ' .. activeQuest .. '\n')
     offsetY = offsetY + headerText:GetStringHeight() + 5
     table.insert(fishFrames, headerText)
+
+    -- Add Derby Dasher Timer
+    timerText = content:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    timerText:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -offsetY)
+    timerText:SetJustifyH("LEFT")
+    timerText:SetJustifyV("TOP")
+    timerText:SetWidth(340)
+    UpdateTimer() -- Initial timer update
+    offsetY = offsetY + timerText:GetStringHeight() + 5
+    table.insert(fishFrames, timerText)
+
+    -- Build fish to catch header
+    local fishHeaderText = content:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    fishHeaderText:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -offsetY)
+    fishHeaderText:SetJustifyH("LEFT")
+    fishHeaderText:SetJustifyV("TOP")
+    fishHeaderText:SetWidth(340)
+    fishHeaderText:SetText('|cffffff00Fish to Catch:|r\n')
+    offsetY = offsetY + fishHeaderText:GetStringHeight() + 5
+    table.insert(fishFrames, fishHeaderText)
 
     -- Build fish entries
     for _, f in ipairs(fishList) do
@@ -257,15 +297,14 @@ local function updateDisplay()
 end
 
 -- Check Buff and Show/Hide Frame
-local SPELL_ID = 456024 -- Replace with the correct Spell ID
 local function checkBuffAndDisplayFrame()
-    local auraTable = C_UnitAuras.GetPlayerAuraBySpellID(SPELL_ID)
+    local auraTable = C_UnitAuras.GetPlayerAuraBySpellID(DERBY_DASHER_SPELL_ID)
     local questIds = {82778, 83529, 83530, 83531, 83532}
     local hasActiveQuest = false
 
     -- Check for active quest
     for _, qid in ipairs(questIds) do
-        if C_QuestLog.IsQuestFlaggedCompleted(qid) or C_QuestLog.IsOnQuest(qid) then
+        if C_QuestLog.IsOnQuest(qid) then
             hasActiveQuest = true
             break
         end
@@ -275,6 +314,8 @@ local function checkBuffAndDisplayFrame()
     if auraTable and hasActiveQuest then
         frame:Show()
         updateDisplay()
+        -- Start timer updates
+        C_Timer.NewTicker(1, UpdateTimer)
     else
         frame:Hide()
     end
