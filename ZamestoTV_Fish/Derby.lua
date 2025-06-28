@@ -80,7 +80,7 @@ ns.questFish = {
         {name = L['Queen\'s Lurefish'], questId=82934, zones={L['Hallowfall'], L['Azj-Kahet']}, pools={L['Royal Ripple'], L['Any Water']}, notes=L['Throw Regal Dottyback in water for buff, so as not to search for pools'], caught = false}
     },
     [83529] = {
-        {name = L['Bismuth Bitterling'], questId=82920, zones={L['Hallowfall']}, zones={L['Isle of Dorn'], L['The Ringing Deeps']}, pools={L['Glimmerpool']}, notes='', caught = false},
+        {name = L['Bismuth Bitterling'], questId=82920, zones={L['Isle of Dorn'], L['The Ringing Deeps'], L['Hallowfall']}, pools={L['Glimmerpool']}, notes='', caught = false},
         {name = L['Whispering Stargazer'], questId=82922, zones={L['Isle of Dorn'], L['The Ringing Deeps'], L['Hallowfall']}, pools={L['Stargazer Swarm']}, notes='', caught = false},
         {name = L['Regal Dottyback'], questId=82929, zones={L['Hallowfall'], L['Azj-Kahet']}, pools={L['Royal Ripple']}, notes='', caught = false}
     },
@@ -91,7 +91,7 @@ ns.questFish = {
     },
     [83531] = {
         {name = L['Dilly-Dally Dace'], questId=82947, zones={L['Isle of Dorn'], L['The Ringing Deeps'], L['Hallowfall']}, pools={L['Blood in the Water'], L['Calm Surfacing Ripple'], L['Festering Rotpool']}, notes='', caught = false},
-        {...},
+		{name = L['Dornish Pike'], questId=82926, zones={L['Isle of Dorn'], L['The Ringing Deeps'], L['Hallowfall']}, pools={L['Calm Surfacing Ripple']}, notes='', caught = false},
         {name = L['Kaheti Slum Shark'], questId=82930, zones={L['Hallowfall'], L['Azj-Kahet']}, pools={L['Blood in the Water'], L['Swarm of Slum Sharks']}, notes='', caught = false}
     },
     [83532] = {
@@ -102,7 +102,7 @@ ns.questFish = {
 }
 
 -- Create Main Frame
-local frame = CreateFrame("Frame", addonName, UIParent, BackdropTemplateMixin and "BackdropTemplate")
+local frame = CreateFrame("Frame", addonName, UIParent, "BackdropTemplate") -- Simplified BackdropTemplateMixin check
 frame:SetSize(390, 310)
 frame:SetPoint("CENTER")
 frame:SetMovable(true)
@@ -111,7 +111,7 @@ frame:RegisterForDrag("LeftButton")
 frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
 frame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
 
--- Add Background and Border using BackdropTemplateMixin
+-- Add Background and Border
 frame:SetBackdrop({
     bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
     edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
@@ -132,7 +132,7 @@ local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
 closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -5, -5)
 closeButton:SetScript("OnClick", function() frame:Hide() end)
 
--- Create Content Frame (without ScrollFrame)
+-- Create Content Frame
 local content = CreateFrame("Frame", nil, frame)
 content:SetPoint("TOPLEFT", frame, "TOPLEFT", 15, -40)
 content:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -15, 15)
@@ -144,6 +144,7 @@ local fishFrames = {}
 -- Timer variables
 local DERBY_DASHER_SPELL_ID = 456024
 local timerText
+local ticker = nil -- Store the ticker for cancellation
 
 -- Function to format time
 local function FormatTime(seconds)
@@ -155,7 +156,7 @@ end
 -- Update Timer Function
 local function UpdateTimer()
     local aura = C_UnitAuras.GetPlayerAuraBySpellID(DERBY_DASHER_SPELL_ID)
-    if aura and aura.expirationTime then
+    if aura and aura.expirationTime and aura.expirationTime > 0 then -- Added nil check
         local timeLeft = aura.expirationTime - GetTime()
         if timeLeft > 0 then
             timerText:SetText("Derby Dasher Timer: " .. FormatTime(math.floor(timeLeft)))
@@ -178,7 +179,7 @@ local function updateDisplay()
     wipe(fishFrames)
 
     local offsetY = 0
-    local text = 'Version 3.1.1\n\n'
+    local text = 'Version 3.1.2\n\n'
     local activeQuest = nil
     local questIds = {82778, 83529, 83530, 83531, 83532}
 
@@ -314,10 +315,19 @@ local function checkBuffAndDisplayFrame()
     if auraTable and hasActiveQuest then
         frame:Show()
         updateDisplay()
-        -- Start timer updates
-        C_Timer.NewTicker(1, UpdateTimer)
+        -- Cancel existing ticker if any
+        if ticker then
+            ticker:Cancel()
+        end
+        -- Start new timer
+        ticker = C_Timer.NewTicker(1, UpdateTimer)
     else
         frame:Hide()
+        -- Cancel ticker when hiding frame
+        if ticker then
+            ticker:Cancel()
+            ticker = nil
+        end
     end
 end
 
